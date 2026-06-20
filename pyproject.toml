@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wc2026-predictor"
+version = "0.1.0"
+description = "A small, production-shaped ML framework for predicting 2026 FIFA World Cup matches."
+readme = "README.md"
+requires-python = ">=3.13"
+license = { text = "MIT" }
+authors = [{ name = "Pablo Cevallos" }]
+keywords = ["football", "soccer", "world-cup", "machine-learning", "elo", "monte-carlo"]
+
+# Lean core dependencies (v1). typer/rich are intentionally omitted until they
+# earn their place; the CLI uses stdlib argparse for now.
+dependencies = [
+    "pandas",
+    "numpy",
+    "scikit-learn",
+    "requests",
+    "pandera",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+    "mypy",
+    "pip-tools",
+]
+
+[project.scripts]
+wc2026 = "wc2026.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.13"
+packages = ["wc2026"]
+mypy_path = "src"
+ignore_missing_imports = true
+warn_unused_ignores = true
+no_implicit_optional = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
