@@ -1,0 +1,12 @@
+{
+  "name": "wc2026-desktop",
+  "version": "0.1.0",
+  "description": "Minimal Electron desktop app for wc2026-predictor.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^33.0.0"
+  }
+}

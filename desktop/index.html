@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self'; connect-src http://127.0.0.1:8765; style-src 'self' 'unsafe-inline';" />
+    <title>WC2026 Predictor</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>World Cup 2026 Predictor</h1>
+      <span id="status" class="status">starting engine…</span>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active" data-tab="match">Match</button>
+      <button class="tab" data-tab="tournament">Tournament</button>
+    </nav>
+
+    <main>
+      <!-- Match tab -->
+      <section id="match" class="panel active">
+        <div class="controls">
+          <label>Home<select id="home"></select></label>
+          <label>Away<select id="away"></select></label>
+          <label class="check"><input type="checkbox" id="neutral" /> Neutral venue</label>
+          <button id="predict" disabled>Predict</button>
+        </div>
+
+        <div id="result" class="result hidden">
+          <div class="bars">
+            <div class="bar-row"><span id="lh" class="bar-label"></span>
+              <div class="bar"><div id="bh" class="fill home"></div></div><span id="ph" class="pct"></span></div>
+            <div class="bar-row"><span class="bar-label">Draw</span>
+              <div class="bar"><div id="bd" class="fill draw"></div></div><span id="pd" class="pct"></span></div>
+            <div class="bar-row"><span id="la" class="bar-label"></span>
+              <div class="bar"><div id="ba" class="fill away"></div></div><span id="pa" class="pct"></span></div>
+          </div>
+          <div class="meta">
+            <span>Most likely score <strong id="score"></strong></span>
+            <span>Confidence <strong id="conf"></strong></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tournament tab -->
+      <section id="tournament" class="panel">
+        <div class="controls">
+          <label>Simulations<input type="number" id="nsims" value="2000" min="100" max="50000" step="100" /></label>
+          <button id="simulate" disabled>Run simulation</button>
+          <span id="simstatus" class="status"></span>
+        </div>
+        <table id="simtable" class="hidden">
+          <thead>
+            <tr><th>Team</th><th>Grp</th><th>R16</th><th>QF</th><th>SF</th><th>Final</th><th>Win</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+    </main>
+
+    <script src="renderer.js"></script>
+  </body>
+</html>

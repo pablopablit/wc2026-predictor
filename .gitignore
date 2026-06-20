@@ -42,3 +42,7 @@ models/*
 
 # Stray R history
 .Rhistory
+
+# Electron desktop app
+desktop/node_modules/
+desktop/dist/
