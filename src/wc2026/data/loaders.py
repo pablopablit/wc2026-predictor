@@ -67,6 +67,26 @@ def load_worldbank() -> pd.DataFrame:
 
 
 @lru_cache(maxsize=1)
+def load_wc2026_groups() -> dict[str, list[str]]:
+    """Return ``{group_letter: [team1..team4]}`` for the 2026 final draw."""
+    path = _require(config.WC2026_GROUPS_PATH)
+    return json.loads(path.read_text())["groups"]
+
+
+def load_wc2026_fixtures() -> pd.DataFrame:
+    """Return the 2026 group-stage fixtures (group, matchday, home/away, neutral)."""
+    path = _require(config.WC2026_FIXTURES_PATH)
+    return pd.read_csv(path)
+
+
+@lru_cache(maxsize=1)
+def load_bracket_map() -> dict:
+    """Return the 2026 R32 slot template + knockout feeder tree."""
+    path = _require(config.WC2026_BRACKET_MAP_PATH)
+    return json.loads(path.read_text())
+
+
+@lru_cache(maxsize=1)
 def load_confederations() -> dict[str, str]:
     """Return a ``team -> confederation`` map (committed reference data).
 

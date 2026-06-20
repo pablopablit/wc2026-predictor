@@ -135,6 +135,29 @@ def _cmd_train(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_simulate(args: argparse.Namespace) -> int:
+    """Monte Carlo the tournament; print advancement probabilities."""
+    from wc2026.tournament.simulate import simulate_tournament
+
+    df = simulate_tournament(n=args.n)
+    if args.json:
+        print(df.to_json(orient="records"))
+        return 0
+
+    print(f"\n2026 World Cup — advancement probabilities ({args.n:,} simulations)\n")
+    pct = df.copy()
+    for c in ("reach_R32", "reach_R16", "reach_QF", "reach_SF", "reach_final", "win"):
+        pct[c] = (df[c] * 100).map(lambda v: f"{v:5.1f}")
+    pct = pct.rename(
+        columns={
+            "reach_R32": "R32", "reach_R16": "R16", "reach_QF": "QF",
+            "reach_SF": "SF", "reach_final": "Final", "win": "Win%",
+        }
+    )
+    print(pct.head(24).to_string(index=False))
+    return 0
+
+
 def _add_json_flag(p: argparse.ArgumentParser) -> None:
     p.add_argument("--json", action="store_true", help="Emit machine-readable JSON.")
 
@@ -208,6 +231,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "data": _cmd_data,
         "train": _cmd_train,
         "evaluate": _cmd_evaluate,
+        "simulate": _cmd_simulate,
     }
     handler = handlers.get(args.command)
     if handler is not None:

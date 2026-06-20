@@ -1,0 +1,73 @@
+group,matchday,home_team,away_team,neutral
+A,1,Mexico,South Korea,False
+A,1,South Africa,Czech Republic,True
+A,2,Mexico,South Africa,False
+A,2,Czech Republic,South Korea,True
+A,3,Mexico,Czech Republic,False
+A,3,South Korea,South Africa,True
+B,1,Canada,Switzerland,False
+B,1,Qatar,Bosnia and Herzegovina,True
+B,2,Canada,Qatar,False
+B,2,Bosnia and Herzegovina,Switzerland,True
+B,3,Canada,Bosnia and Herzegovina,False
+B,3,Switzerland,Qatar,True
+C,1,Brazil,Morocco,True
+C,1,Scotland,Haiti,True
+C,2,Brazil,Scotland,True
+C,2,Haiti,Morocco,True
+C,3,Haiti,Brazil,True
+C,3,Morocco,Scotland,True
+D,1,United States,Paraguay,False
+D,1,Australia,Turkey,True
+D,2,United States,Australia,False
+D,2,Turkey,Paraguay,True
+D,3,United States,Turkey,False
+D,3,Paraguay,Australia,True
+E,1,Germany,Ecuador,True
+E,1,Ivory Coast,Curaçao,True
+E,2,Germany,Ivory Coast,True
+E,2,Curaçao,Ecuador,True
+E,3,Curaçao,Germany,True
+E,3,Ecuador,Ivory Coast,True
+F,1,Netherlands,Japan,True
+F,1,Tunisia,Sweden,True
+F,2,Netherlands,Tunisia,True
+F,2,Sweden,Japan,True
+F,3,Sweden,Netherlands,True
+F,3,Japan,Tunisia,True
+G,1,Belgium,Iran,True
+G,1,Egypt,New Zealand,True
+G,2,Belgium,Egypt,True
+G,2,New Zealand,Iran,True
+G,3,New Zealand,Belgium,True
+G,3,Iran,Egypt,True
+H,1,Spain,Uruguay,True
+H,1,Saudi Arabia,Cape Verde,True
+H,2,Spain,Saudi Arabia,True
+H,2,Cape Verde,Uruguay,True
+H,3,Cape Verde,Spain,True
+H,3,Uruguay,Saudi Arabia,True
+I,1,France,Senegal,True
+I,1,Norway,Iraq,True
+I,2,France,Norway,True
+I,2,Iraq,Senegal,True
+I,3,Iraq,France,True
+I,3,Senegal,Norway,True
+J,1,Argentina,Austria,True
+J,1,Algeria,Jordan,True
+J,2,Argentina,Algeria,True
+J,2,Jordan,Austria,True
+J,3,Jordan,Argentina,True
+J,3,Austria,Algeria,True
+K,1,Portugal,Colombia,True
+K,1,Uzbekistan,DR Congo,True
+K,2,Portugal,Uzbekistan,True
+K,2,DR Congo,Colombia,True
+K,3,DR Congo,Portugal,True
+K,3,Colombia,Uzbekistan,True
+L,1,England,Croatia,True
+L,1,Panama,Ghana,True
+L,2,England,Panama,True
+L,2,Ghana,Croatia,True
+L,3,Ghana,England,True
+L,3,Croatia,Panama,True

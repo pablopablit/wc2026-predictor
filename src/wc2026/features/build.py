@@ -285,6 +285,47 @@ def goal_targets(results: pd.DataFrame) -> pd.DataFrame:
     return df[["home_score", "away_score"]].reset_index(drop=True).astype(int)
 
 
+def asof_history(
+    history: pd.DataFrame, teams: list[str], asof: pd.Timestamp
+) -> tuple[dict, dict, dict]:
+    """Pre-accumulate each team's prior-match (dates, points, gd) lists as of a
+    date — built once so many hypothetical matchups can be featurized cheaply."""
+    md = pd.Timestamp(asof)
+    prior = history[history["date"] < md]
+    hist_dates: dict[str, list] = {t: [] for t in teams}
+    hist_points: dict[str, list] = {t: [] for t in teams}
+    hist_gd: dict[str, list] = {t: [] for t in teams}
+    teamset = set(teams)
+    for r in prior.sort_values("date").itertuples(index=False):
+        for team, gf, ga in (
+            (r.home_team, r.home_score, r.away_score),
+            (r.away_team, r.away_score, r.home_score),
+        ):
+            if team in teamset:
+                hist_dates[team].append(pd.Timestamp(r.date))
+                hist_points[team].append(points_for(gf, ga))
+                hist_gd[team].append(gf - ga)
+    return hist_dates, hist_points, hist_gd
+
+
+def feature_rows(
+    pairs: list[tuple[str, str, bool]],
+    asof: pd.Timestamp,
+    ctx: FeatureContext,
+    hist: tuple[dict, dict, dict],
+    tournament: str = "FIFA World Cup",
+) -> pd.DataFrame:
+    """Featurize many ``(home, away, neutral)`` matchups at once (leakage-safe as
+    of ``asof``), reusing pre-accumulated history from :func:`asof_history`."""
+    md = pd.Timestamp(asof)
+    hd, hp, hg = hist
+    rows = [
+        _row_features(h, a, md, neutral, tournament, ctx, hd, hp, hg)
+        for (h, a, neutral) in pairs
+    ]
+    return pd.DataFrame(rows, columns=list(FEATURE_NAMES))
+
+
 def build_features(match: Match, history: pd.DataFrame, ctx: FeatureContext) -> pd.DataFrame:
     """Build a single-row feature frame for an unplayed :class:`Match`.
 
