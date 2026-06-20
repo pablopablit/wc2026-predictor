@@ -39,3 +39,6 @@ models/*
 
 # OS
 .DS_Store
+
+# Stray R history
+.Rhistory
