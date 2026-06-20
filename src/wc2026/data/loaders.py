@@ -11,5 +11,5 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Phase 2 implements: load_results(), load_shootouts(),
+# Phase 2 implements: load_results(), load_shootouts(), load_worldbank(),
 # load_wc2026_groups(), load_wc2026_fixtures(), load_bracket_map().

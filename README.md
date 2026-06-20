@@ -50,19 +50,34 @@ The CLI is also directly available as `wc2026` inside the venv
 See [`sources.md`](sources.md) for full details. Backbone training data is
 [martj42/international_results](https://github.com/martj42/international_results)
 (`results.csv`, `shootouts.csv`). Team strength is an **Elo rating derived from
-those results** (no external Elo file in v1). The 2026 groups, fixtures, and
+those results** (no external Elo file in v1). **World Bank** population & GDP per
+capita (open API) provide structural priors. The 2026 groups, fixtures, and
 bracket map are committed as small versioned files under `data/raw/`.
 
 ## Model
 
+Approach mirrors [playmobil/worldcup-forecast](https://github.com/playmobil/worldcup-forecast),
+adapted to this codebase. See [`docs/DESIGN.md`](docs/DESIGN.md) for the full
+methodology and [`docs/FINDINGS.md`](docs/FINDINGS.md) for the validation ledger.
+
+- **Primary model** (`models/poisson.py`): a **hierarchical Bayesian Poisson**
+  goal model (PyMC). Teams have partially-pooled attack/defence strengths plus a
+  global home-advantage term. **Priors are set by reasoning, not fit to the ~36
+  historical World Cups**; data-scarce teams shrink toward Elo- and structurally-
+  informed priors (World Bank population & GDP).
+- **Outputs** unify scoreline and outcome: the posterior yields a **Poisson score
+  grid**, summed into calibrated W/D/L probabilities, with the modal cell as the
+  most-likely scoreline. Temperature calibration + a neutral-site draw adjustment.
 - **Baseline** (`models/baseline.py`): Elo difference + home advantage — the bar
-  to beat.
-- **Classifier** (`models/classifier.py`): scikit-learn
-  `HistGradientBoostingClassifier` with probability calibration, behind the same
-  `Predictor` interface so XGBoost/LightGBM can be swapped in later.
+  the Bayesian model must clear. Both implement one `Predictor` interface, so the
+  simulator/CLI are model-agnostic (XGBoost, a richer Poisson, etc. drop in).
 - Evaluated primarily on **log-loss** and **Brier score** (calibration matters
   most for a probabilistic sim), accuracy secondary, with a reliability curve.
 - Trained with a **temporal** (walk-forward) split — never shuffled across time.
+  Full NUTS sampling is reserved for the final fit; the backtest uses a fast
+  MAP/variational fit to stay usable.
+- **Independence principle:** betting/market odds are never a model input — only
+  ever an optional benchmark (`config.MARKET_ODDS_AS_INPUT = False`).
 
 ## Data discipline
 
@@ -77,7 +92,8 @@ bracket map are committed as small versioned files under `data/raw/`.
 ## Known limitations (v1)
 
 - Small, deliberately simple feature set.
-- Naive Poisson scorelines (placeholder; hook left for a richer model).
+- Independent (single) Poisson score grid — no bivariate/Dixon-Coles correlation
+  yet (hook left; validate before adding, per the reference's overfit finding).
 - Crude knockout draw-resolution (Elo-weighted penalty coin-flip).
 - No player-level data, no live updates, no betting-odds ingestion, no web UI.
 
@@ -87,8 +103,9 @@ bracket map are committed as small versioned files under `data/raw/`.
   (`fit`/`predict_proba`/`save`/`load`) in a new class — nothing else changes.
 - **Add features:** add a small, tested `feature_*` function in
   `features/build.py` and append it to `FEATURE_NAMES`.
-- **Richer scorelines:** replace the naive Poisson helper with a
-  bivariate-Poisson / Dixon-Coles model behind the same scoreline hook.
+- **Richer scorelines:** extend the Poisson score grid toward a bivariate-Poisson
+  / Dixon-Coles model behind the same `score_grid` hook (the reference found
+  Dixon-Coles over-fit sparse data, so validate via `docs/FINDINGS.md` first).
 - **Richer simulation:** the bracket mapping lives in
   `data/raw/wc2026_bracket_map.json` (editable, not code); draw-resolution and
   match sampling in `tournament/simulate.py` are isolated functions.
@@ -102,7 +119,7 @@ src/wc2026/
   config.py        paths, seed, fixed 2026 format
   data/            ingest · loaders · schema
   features/        elo · build
-  models/          base (Predictor) · baseline · classifier
+  models/          base (Predictor) · baseline (Elo) · poisson (Bayesian)
   evaluate/        metrics + temporal backtest
   tournament/      groups (standings/tiebreakers) · simulate (Monte Carlo)
   cli.py           the wc2026 entry point

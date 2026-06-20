@@ -1,6 +1,12 @@
-"""Assemble the model feature matrix for a match — one small, tested function each.
+"""Assemble inputs for the models — one small, tested function each.
 
-Features (v1, deliberately small; each computable strictly pre-kickoff):
+Two consumers share this module:
+* the **Elo-logit baseline**, which uses the match-context features below;
+* the **Bayesian Poisson** model, which additionally uses per-team **structural
+  priors** (log-population, GDP per capita) so data-scarce teams shrink toward a
+  sensible prior rather than noise.
+
+Match-context features (each computable strictly pre-kickoff):
 
 * ``elo_diff``            home Elo − away Elo (before kickoff)
 * ``elo_home`` / ``elo_away``  individual ratings
@@ -12,9 +18,16 @@ Features (v1, deliberately small; each computable strictly pre-kickoff):
 * ``confed_home/away``    confederation (categorical)
 * ``importance_tier``     match-importance tier from the tournament label
 
+Structural priors (per team, frozen pre-2026 — World Bank):
+
+* ``log_population``      log of total population
+* ``gdp_per_capita``      GDP per capita (current US$); enters the prior as an
+  inverted-U, per the reference's finding.
+
 The no-leakage contract (``tests/test_features_no_leakage.py``): every feature
 function takes a :class:`~wc2026.models.base.Match` plus history *before* the
-match date and never reads the match's own score or any future match.
+match date and never reads the match's own score or any future match. Market /
+betting odds are never used as inputs (``config.MARKET_ODDS_AS_INPUT``).
 """
 
 from __future__ import annotations

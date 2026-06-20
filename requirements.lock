@@ -6,24 +6,75 @@
 #
 annotated-types==0.7.0
     # via pydantic
+arviz==1.2.0
+    # via
+    #   pymc
+    #   wc2026-predictor (pyproject.toml)
+arviz-base==1.2.0
+    # via
+    #   arviz
+    #   arviz-plots
+    #   arviz-stats
+arviz-plots==1.2.0
+    # via arviz
+arviz-stats[xarray]==1.2.0
+    # via
+    #   arviz
+    #   arviz-plots
+    #   arviz-stats
 ast-serialize==0.5.0
     # via mypy
 build==1.5.0
     # via pip-tools
+cachetools==6.2.6
+    # via pymc
 certifi==2026.6.17
     # via requests
 charset-normalizer==3.4.7
     # via requests
 click==8.4.1
     # via pip-tools
+cloudpickle==3.1.2
+    # via pymc
+cons==0.4.7
+    # via
+    #   etuples
+    #   minikanren
+    #   pytensor
+etuples==0.3.10
+    # via
+    #   minikanren
+    #   pytensor
+filelock==3.29.4
+    # via pytensor
 idna==3.18
     # via requests
 iniconfig==2.3.0
     # via pytest
 joblib==1.5.3
     # via scikit-learn
+lazy-loader==0.5
+    # via arviz-base
 librt==0.11.0
     # via mypy
+llvmlite==0.47.0
+    # via numba
+logical-unification==0.4.7
+    # via
+    #   cons
+    #   minikanren
+    #   pytensor
+markdown-it-py==4.2.0
+    # via rich
+mdurl==0.1.2
+    # via markdown-it-py
+minikanren==1.0.5
+    # via pytensor
+multipledispatch==1.0.0
+    # via
+    #   etuples
+    #   logical-unification
+    #   minikanren
 mypy==2.1.0
     # via wc2026-predictor (pyproject.toml)
 mypy-extensions==1.1.0
@@ -32,20 +83,34 @@ mypy-extensions==1.1.0
     #   typing-inspect
 narwhals==2.22.1
     # via scikit-learn
+numba==0.65.1
+    # via pytensor
 numpy==2.4.6
     # via
+    #   arviz-base
+    #   arviz-stats
+    #   numba
     #   pandas
+    #   pymc
+    #   pytensor
     #   scikit-learn
     #   scipy
     #   wc2026-predictor (pyproject.toml)
+    #   xarray
+    #   xarray-einstats
 packaging==26.2
     # via
     #   build
+    #   lazy-loader
     #   pandera
     #   pytest
     #   wheel
+    #   xarray
 pandas==3.0.3
-    # via wc2026-predictor (pyproject.toml)
+    # via
+    #   pymc
+    #   wc2026-predictor (pyproject.toml)
+    #   xarray
 pandera==0.32.0
     # via wc2026-predictor (pyproject.toml)
 pathspec==1.1.1
@@ -59,35 +124,57 @@ pydantic==2.13.4
 pydantic-core==2.46.4
     # via pydantic
 pygments==2.20.0
-    # via pytest
+    # via
+    #   pytest
+    #   rich
+pymc==6.0.1
+    # via wc2026-predictor (pyproject.toml)
 pyproject-hooks==1.2.0
     # via
     #   build
     #   pip-tools
+pytensor==3.0.7
+    # via pymc
 pytest==9.1.1
     # via wc2026-predictor (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via pandas
 requests==2.34.2
     # via wc2026-predictor (pyproject.toml)
+rich==15.0.0
+    # via pymc
 ruff==0.15.18
     # via wc2026-predictor (pyproject.toml)
 scikit-learn==1.9.0
     # via wc2026-predictor (pyproject.toml)
 scipy==1.18.0
-    # via scikit-learn
+    # via
+    #   arviz-stats
+    #   pymc
+    #   pytensor
+    #   scikit-learn
+    #   xarray-einstats
 six==1.17.0
     # via python-dateutil
 threadpoolctl==3.6.0
-    # via scikit-learn
+    # via
+    #   pymc
+    #   scikit-learn
+toolz==1.1.0
+    # via
+    #   logical-unification
+    #   minikanren
 typeguard==4.5.2
     # via pandera
 typing-extensions==4.15.0
     # via
+    #   arviz-base
+    #   minikanren
     #   mypy
     #   pandera
     #   pydantic
     #   pydantic-core
+    #   pymc
     #   typeguard
     #   typing-inspect
     #   typing-inspection
@@ -99,6 +186,13 @@ urllib3==2.7.0
     # via requests
 wheel==0.47.0
     # via pip-tools
+xarray==2026.4.0
+    # via
+    #   arviz-base
+    #   arviz-stats
+    #   xarray-einstats
+xarray-einstats==0.10.0
+    # via arviz-stats
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip

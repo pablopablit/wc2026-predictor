@@ -65,3 +65,21 @@ clearly-marked **placeholder** is provided until the official data is available.
 - **License:** factual tournament structure (not copyrightable as data); team
   lists derive from FIFA's published draw.
 - **Retrieved / authored:** _pending Phase 2_
+
+---
+
+## 4. Structural indicators (World Bank) — Poisson priors
+
+- **API:** https://api.worldbank.org/v2/ (open JSON API; fetched via `requests`)
+- **Indicators:**
+  - `SP.POP.TOTL` — population, total
+  - `NY.GDP.PCAP.CD` — GDP per capita (current US$)
+- **Use:** per-team **priors** for the hierarchical Bayesian Poisson model, so
+  data-scarce teams shrink toward a sensible structural prior. GDP enters as an
+  inverted-U (per the reference's finding). Values are **frozen to a pre-2026
+  snapshot** and cached as `data/raw/worldbank_indicators.csv` to avoid leakage.
+- **License:** CC BY 4.0 (World Bank Open Data).
+- **Retrieved:** _pending first `wc2026 data` run_
+
+> **Independence principle:** betting/market odds are never used as model inputs
+> (`config.MARKET_ODDS_AS_INPUT = False`); they may only ever be a benchmark.

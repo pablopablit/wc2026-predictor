@@ -41,6 +41,26 @@ WC2026_FIXTURES_PATH = RAW_DIR / "wc2026_fixtures.csv"
 #: Bracket mapping (which group position meets which) lives in data, not code.
 WC2026_BRACKET_MAP_PATH = RAW_DIR / "wc2026_bracket_map.json"
 
+# World Bank structural indicators (fetched via the open API; cached as CSV).
+# Used as priors for data-scarce teams in the Bayesian Poisson model.
+WORLDBANK_PATH = RAW_DIR / "worldbank_indicators.csv"
+#: Indicator codes: population (total) and GDP per capita (current US$).
+WORLDBANK_INDICATORS: tuple[str, ...] = ("SP.POP.TOTL", "NY.GDP.PCAP.CD")
+
+# --------------------------------------------------------------------------- #
+# Model defaults
+# --------------------------------------------------------------------------- #
+#: Football-Elo K-factor (reference uses 40); scaled further by importance/margin.
+ELO_K_FACTOR = 40.0
+#: Elo home-advantage term in rating points (suppressed on neutral ground).
+ELO_HOME_ADVANTAGE = 65.0
+#: Max goals per side in the Poisson score grid used to derive W/D/L + scoreline.
+SCORE_GRID_MAX_GOALS = 10
+
+#: Independence principle: betting/market odds are NEVER a model input — only an
+#: optional benchmark. Kept here as an explicit, documented invariant.
+MARKET_ODDS_AS_INPUT = False
+
 # --------------------------------------------------------------------------- #
 # 2026 tournament format (FIXED — do not infer at runtime).
 # --------------------------------------------------------------------------- #

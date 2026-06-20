@@ -12,14 +12,18 @@ license = { text = "MIT" }
 authors = [{ name = "Pablo Cevallos" }]
 keywords = ["football", "soccer", "world-cup", "machine-learning", "elo", "monte-carlo"]
 
-# Lean core dependencies (v1). typer/rich are intentionally omitted until they
-# earn their place; the CLI uses stdlib argparse for now.
+# Core dependencies (v1). typer/rich are intentionally omitted until they earn
+# their place; the CLI uses stdlib argparse for now. PyMC + ArviZ power the
+# hierarchical Bayesian Poisson goal model; the World Bank structural data is
+# fetched via plain `requests` against the open API (no extra client dep).
 dependencies = [
     "pandas",
     "numpy",
-    "scikit-learn",
+    "scikit-learn",  # Elo-logit baseline, calibration utilities, metrics
     "requests",
     "pandera",
+    "pymc",          # hierarchical Bayesian Poisson goal model
+    "arviz",         # posterior diagnostics / inspection
 ]
 
 [project.optional-dependencies]
