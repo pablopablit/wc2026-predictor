@@ -16,6 +16,7 @@ parser and a clean dispatch table.
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import sys
 from collections.abc import Sequence
@@ -26,6 +27,36 @@ from wc2026.config import configure_logging
 logger = logging.getLogger("wc2026")
 
 _NOT_YET = "This command is implemented in a later build phase."
+
+
+def _cmd_data(args: argparse.Namespace) -> int:
+    """Download/refresh sources, build the manifest, and print a summary."""
+    from wc2026.data import ingest
+
+    if not args.yes:
+        print(
+            "About to fetch data over the network:\n"
+            f"  - martj42 results.csv / shootouts.csv\n"
+            f"  - World Bank indicators ({', '.join(ingest.config.WORLDBANK_INDICATORS)})\n"
+            "into ./data/raw/."
+        )
+        reply = input("Proceed? [y/N] ").strip().lower()
+        if reply not in {"y", "yes"}:
+            print("Aborted; no network calls made.")
+            return 1
+
+    manifest = ingest.refresh_sources(force=args.force)
+
+    if args.json:
+        print(json.dumps(manifest, indent=2))
+        return 0
+
+    print(f"\nData manifest ({manifest['generated_at']}):")
+    for name, e in manifest["sources"].items():
+        rows = f"{e['rows']:,} rows" if e["rows"] is not None else "n/a"
+        print(f"  {name:10s} {rows:>14s}  {e['bytes'] / 1024:8.1f} KiB  sha256:{e['sha256'][:12]}…")
+    print(f"\nManifest hash: {ingest.manifest_hash()}")
+    return 0
 
 
 def _add_json_flag(p: argparse.ArgumentParser) -> None:
@@ -48,6 +79,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_data = sub.add_parser("data", help="Download/refresh sources and build datasets.")
     p_data.add_argument(
         "--yes", action="store_true", help="Skip the confirmation before network calls."
+    )
+    p_data.add_argument(
+        "--force", action="store_true", help="Re-download even if files are already cached."
     )
     _add_json_flag(p_data)
 
@@ -85,7 +119,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     configure_logging(args.log_level)
 
-    # Dispatch is wired; command bodies arrive in Phases 2–8.
+    # Dispatch table; command bodies are filled in across Phases 2–8.
+    handlers = {
+        "data": _cmd_data,
+    }
+    handler = handlers.get(args.command)
+    if handler is not None:
+        return handler(args)
+
     logger.info("Command '%s' selected.", args.command)
     print(f"[wc2026] '{args.command}' — {_NOT_YET}")
     return 0
