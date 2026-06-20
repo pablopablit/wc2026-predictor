@@ -59,6 +59,73 @@ def _cmd_data(args: argparse.Namespace) -> int:
     return 0
 
 
+def _model_factory(name: str):
+    """Return a zero-arg constructor for the requested model type."""
+    if name == "baseline":
+        from wc2026.models.baseline import BaselinePredictor
+
+        return BaselinePredictor
+    if name == "bayesian":
+        from wc2026.models.poisson import BayesianPoissonPredictor
+
+        return BayesianPoissonPredictor
+    raise ValueError(f"Unknown model '{name}'.")
+
+
+def _prepare_matrix():
+    """Load data, fit Elo + structural lookups, and build the (X, y, cutoff)."""
+    from wc2026.data import loaders
+    from wc2026.features import build
+
+    results = loaders.load_results()
+    ctx = build.make_context(results)
+    X, y = build.build_training_matrix(results, ctx)
+    cutoff = results["date"].max().date()
+    return X, y, cutoff
+
+
+def _cmd_evaluate(args: argparse.Namespace) -> int:
+    """Walk-forward temporal backtest; print the scorecard."""
+    import json as _json
+
+    from wc2026.evaluate.metrics import backtest
+
+    X, y, _ = _prepare_matrix()
+    card = backtest(_model_factory(args.model), X, y, n_splits=args.splits)
+    if args.json:
+        print(_json.dumps(card.to_dict(), indent=2))
+    else:
+        print(card)
+    return 0
+
+
+def _cmd_train(args: argparse.Namespace) -> int:
+    """Backtest, fit the final model on all data, persist with metadata."""
+    import json as _json
+
+    from wc2026.data import ingest
+    from wc2026.evaluate.metrics import backtest
+
+    X, y, cutoff = _prepare_matrix()
+    factory = _model_factory(args.model)
+
+    card = backtest(factory, X, y, n_splits=args.splits)
+    model = factory().fit(X, y)
+    model.build_meta(
+        training_cutoff=cutoff,
+        scorecard=card.mean(),
+        manifest_hash=ingest.manifest_hash(),
+    )
+    path = model.save()
+
+    if args.json:
+        print(_json.dumps({"saved": str(path), **card.to_dict()}, indent=2))
+    else:
+        print(card)
+        print(f"\nTrained on {len(X):,} matches up to {cutoff}. Saved model → {path}")
+    return 0
+
+
 def _add_json_flag(p: argparse.ArgumentParser) -> None:
     p.add_argument("--json", action="store_true", help="Emit machine-readable JSON.")
 
@@ -86,9 +153,17 @@ def build_parser() -> argparse.ArgumentParser:
     _add_json_flag(p_data)
 
     p_train = sub.add_parser("train", help="Train, evaluate, and persist the model.")
+    p_train.add_argument(
+        "--model", choices=("baseline", "bayesian"), default="baseline", help="Model to train."
+    )
+    p_train.add_argument("--splits", type=int, default=5, help="Backtest folds.")
     _add_json_flag(p_train)
 
     p_eval = sub.add_parser("evaluate", help="Run the temporal backtest.")
+    p_eval.add_argument(
+        "--model", choices=("baseline", "bayesian"), default="baseline", help="Model to evaluate."
+    )
+    p_eval.add_argument("--splits", type=int, default=5, help="Backtest folds.")
     _add_json_flag(p_eval)
 
     p_pred = sub.add_parser("predict", help="Predict a single match.")
@@ -122,6 +197,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     # Dispatch table; command bodies are filled in across Phases 2–8.
     handlers = {
         "data": _cmd_data,
+        "train": _cmd_train,
+        "evaluate": _cmd_evaluate,
     }
     handler = handlers.get(args.command)
     if handler is not None:

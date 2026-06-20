@@ -33,6 +33,66 @@ def test_match_carries_no_score() -> None:
     assert not any("score" in f or "goal" in f for f in m.__dataclass_fields__)
 
 
-@pytest.mark.skip(reason="End-to-end model smoke test implemented in Phase 5.")
+def _toy_matrix():
+    import pandas as pd
+
+    from wc2026.features import build
+    from wc2026.features.elo import EloModel
+
+    results = pd.DataFrame(
+        {
+            "date": pd.to_datetime(
+                [f"2000-{m:02d}-01" for m in range(1, 13)]
+                + [f"2001-{m:02d}-01" for m in range(1, 13)]
+            ),
+            "home_team": (["A", "B", "C", "D"] * 6),
+            "away_team": (["B", "C", "D", "A"] * 6),
+            "home_score": ([2, 0, 1, 3] * 6),
+            "away_score": ([0, 1, 1, 0] * 6),
+            "tournament": (["Friendly"] * 24),
+            "neutral": ([False] * 24),
+        }
+    )
+    ctx = build.FeatureContext(
+        elo=EloModel().fit(results),
+        confederations={t: "UEFA" for t in "ABCD"},
+        structural={},
+    )
+    return build.build_training_matrix(results, ctx)
+
+
 def test_train_predict_probs_sum_to_one() -> None:
-    ...
+    import numpy as np
+
+    from wc2026.models.baseline import BaselinePredictor
+
+    X, y = _toy_matrix()
+    model = BaselinePredictor().fit(X, y)
+    proba = model.predict_proba(X)
+    assert proba.shape == (len(X), 3)
+    np.testing.assert_allclose(proba.sum(axis=1), 1.0, rtol=1e-6)
+    assert ((proba >= 0) & (proba <= 1)).all()
+
+
+def test_save_load_roundtrip(tmp_path) -> None:
+    import datetime as dt
+
+    import numpy as np
+
+    from wc2026.models.baseline import BaselinePredictor
+
+    X, y = _toy_matrix()
+    model = BaselinePredictor().fit(X, y)
+    model.build_meta(
+        training_cutoff=dt.date(2001, 12, 1),
+        scorecard={"log_loss": 1.0},
+        manifest_hash="abc123",
+    )
+    path = model.save(tmp_path / "m.joblib")
+    assert path.exists()
+    assert (tmp_path / "m.model_meta.json").exists()
+
+    loaded = BaselinePredictor.load(path)
+    np.testing.assert_allclose(loaded.predict_proba(X), model.predict_proba(X))
+    assert loaded.meta is not None
+    assert loaded.meta.data_manifest_hash == "abc123"
