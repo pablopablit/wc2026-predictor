@@ -24,6 +24,7 @@ data/raw/*
 !data/raw/wc2026_groups.json
 !data/raw/wc2026_fixtures.csv
 !data/raw/wc2026_bracket_map.json
+!data/raw/confederations.json
 data/interim/*
 !data/interim/.gitkeep
 data/processed/*

@@ -8,7 +8,9 @@ A missing cache fails with a clear pointer to ``wc2026 data``.
 
 from __future__ import annotations
 
+import json
 import logging
+from functools import lru_cache
 from pathlib import Path
 
 import pandas as pd
@@ -62,3 +64,20 @@ def load_worldbank() -> pd.DataFrame:
     path = _require(config.WORLDBANK_PATH)
     df = pd.read_csv(path)
     return schema.validate_worldbank(df)
+
+
+@lru_cache(maxsize=1)
+def load_confederations() -> dict[str, str]:
+    """Return a ``team -> confederation`` map (committed reference data).
+
+    Teams absent from the file map to ``config.UNKNOWN_CONFEDERATION``; callers
+    look up with ``.get(team, config.UNKNOWN_CONFEDERATION)``.
+    """
+    path = _require(config.CONFEDERATIONS_PATH)
+    raw = json.loads(path.read_text())
+    return {
+        team: confed
+        for confed, teams in raw.items()
+        if not confed.startswith("_")
+        for team in teams
+    }

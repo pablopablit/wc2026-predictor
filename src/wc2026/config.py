@@ -40,6 +40,10 @@ WC2026_GROUPS_PATH = RAW_DIR / "wc2026_groups.json"
 WC2026_FIXTURES_PATH = RAW_DIR / "wc2026_fixtures.csv"
 #: Bracket mapping (which group position meets which) lives in data, not code.
 WC2026_BRACKET_MAP_PATH = RAW_DIR / "wc2026_bracket_map.json"
+#: Team -> FIFA confederation reference (small, committed).
+CONFEDERATIONS_PATH = RAW_DIR / "confederations.json"
+#: Confederation label for teams not present in the reference file.
+UNKNOWN_CONFEDERATION = "Other"
 
 # World Bank structural indicators (fetched via the open API; cached as CSV).
 # Used as priors for data-scarce teams in the Bayesian Poisson model.
