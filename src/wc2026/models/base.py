@@ -81,14 +81,24 @@ class Predictor(ABC):
     #: Populated during ``fit``; the exact, ordered feature list the model expects.
     feature_names: tuple[str, ...] = ()
 
+    #: True for models whose fit needs the raw goal targets (e.g. the Poisson
+    #: model), not just the 3-class label. The backtest/trainer pass goals when so.
+    requires_goals: bool = False
+
     #: Populated after fit/evaluate so it can be bundled into ``ModelMeta``.
     meta: ModelMeta | None = None
 
     # -- core interface ----------------------------------------------------- #
     @abstractmethod
-    def fit(self, X: pd.DataFrame, y: pd.Series | np.ndarray) -> Predictor:
+    def fit(
+        self,
+        X: pd.DataFrame,
+        y: pd.Series | np.ndarray,
+        goals: pd.DataFrame | None = None,
+    ) -> Predictor:
         """Fit on a feature matrix ``X`` (columns from ``features.build``) and
-        integer labels ``y`` (0/1/2 → home_win/draw/away_win). Returns ``self``."""
+        integer labels ``y`` (0/1/2 → home_win/draw/away_win). ``goals`` (home/away
+        score) is supplied only to models with ``requires_goals``. Returns ``self``."""
 
     @abstractmethod
     def predict_proba(self, X: pd.DataFrame) -> np.ndarray:

@@ -73,15 +73,24 @@ def _model_factory(name: str):
 
 
 def _prepare_matrix():
-    """Load data, fit Elo + structural lookups, and build the (X, y, cutoff)."""
+    """Load data, fit Elo + structural lookups, build (X, y, goals, cutoff)."""
     from wc2026.data import loaders
     from wc2026.features import build
 
     results = loaders.load_results()
     ctx = build.make_context(results)
     X, y = build.build_training_matrix(results, ctx)
+    goals = build.goal_targets(results)
     cutoff = results["date"].max().date()
-    return X, y, cutoff
+    return X, y, goals, cutoff
+
+
+def _fit_model(factory, X, y, goals):
+    """Fit a fresh model on all data, passing goals when the model needs them."""
+    model = factory()
+    if model.requires_goals:
+        return model.fit(X, y, goals=goals)
+    return model.fit(X, y)
 
 
 def _cmd_evaluate(args: argparse.Namespace) -> int:
@@ -90,8 +99,8 @@ def _cmd_evaluate(args: argparse.Namespace) -> int:
 
     from wc2026.evaluate.metrics import backtest
 
-    X, y, _ = _prepare_matrix()
-    card = backtest(_model_factory(args.model), X, y, n_splits=args.splits)
+    X, y, goals, _ = _prepare_matrix()
+    card = backtest(_model_factory(args.model), X, y, goals=goals, n_splits=args.splits)
     if args.json:
         print(_json.dumps(card.to_dict(), indent=2))
     else:
@@ -106,11 +115,11 @@ def _cmd_train(args: argparse.Namespace) -> int:
     from wc2026.data import ingest
     from wc2026.evaluate.metrics import backtest
 
-    X, y, cutoff = _prepare_matrix()
+    X, y, goals, cutoff = _prepare_matrix()
     factory = _model_factory(args.model)
 
-    card = backtest(factory, X, y, n_splits=args.splits)
-    model = factory().fit(X, y)
+    card = backtest(factory, X, y, goals=goals, n_splits=args.splits)
+    model = _fit_model(factory, X, y, goals)
     model.build_meta(
         training_cutoff=cutoff,
         scorecard=card.mean(),

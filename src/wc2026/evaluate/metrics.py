@@ -138,16 +138,23 @@ def backtest(
     model_factory: Callable[[], Predictor],
     X: pd.DataFrame,
     y: pd.Series,
+    goals: pd.DataFrame | None = None,
     n_splits: int = 5,
     min_train_frac: float = 0.5,
 ) -> Scorecard:
     """Walk-forward backtest: refit a fresh model per fold on the expanding window
-    and score it on the next time-ordered block."""
+    and score it on the next time-ordered block. ``goals`` (home/away score) is
+    passed through to models that need it (``requires_goals``)."""
     y_arr = np.asarray(y)
     card = Scorecard(model_type=model_factory().model_type)
     for i, (tr, te) in enumerate(walk_forward_splits(len(X), n_splits, min_train_frac)):
         model = model_factory()
-        model.fit(X.iloc[tr], y_arr[tr])
+        if model.requires_goals:
+            if goals is None:
+                raise ValueError(f"{model.model_type} requires goal targets; pass goals=.")
+            model.fit(X.iloc[tr], y_arr[tr], goals=goals.iloc[tr])
+        else:
+            model.fit(X.iloc[tr], y_arr[tr])
         proba = model.predict_proba(X.iloc[te])
         card.add_fold(i, len(te), compute_metrics(y_arr[te], proba))
     logger.info("Backtest of %s: %s", card.model_type, card.mean())

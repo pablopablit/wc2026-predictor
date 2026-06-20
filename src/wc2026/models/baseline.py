@@ -49,7 +49,12 @@ class BaselinePredictor(Predictor):
     def _matrix(self, X: pd.DataFrame) -> np.ndarray:
         return X[list(BASELINE_FEATURES)].fillna(0.0).to_numpy(dtype=float)
 
-    def fit(self, X: pd.DataFrame, y: pd.Series | np.ndarray) -> BaselinePredictor:
+    def fit(
+        self,
+        X: pd.DataFrame,
+        y: pd.Series | np.ndarray,
+        goals: pd.DataFrame | None = None,  # unused; present for interface parity
+    ) -> BaselinePredictor:
         self._pipe.fit(self._matrix(X), np.asarray(y))
         logger.info("Fitted %s on %d matches.", self.model_type, len(X))
         return self

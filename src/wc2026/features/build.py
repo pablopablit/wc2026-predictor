@@ -278,6 +278,13 @@ def build_training_matrix(
     return X, y
 
 
+def goal_targets(results: pd.DataFrame) -> pd.DataFrame:
+    """Aligned (home_score, away_score) goal targets in the same row order as
+    :func:`build_training_matrix` (date-sorted) — used by the Poisson model."""
+    df = results.sort_values("date", kind="stable")
+    return df[["home_score", "away_score"]].reset_index(drop=True).astype(int)
+
+
 def build_features(match: Match, history: pd.DataFrame, ctx: FeatureContext) -> pd.DataFrame:
     """Build a single-row feature frame for an unplayed :class:`Match`.
 

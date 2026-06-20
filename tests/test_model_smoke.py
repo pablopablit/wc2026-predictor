@@ -74,6 +74,39 @@ def test_train_predict_probs_sum_to_one() -> None:
     assert ((proba >= 0) & (proba <= 1)).all()
 
 
+def test_poisson_grid_orientation_and_probs() -> None:
+    """A strong home side (high λ_home, low λ_away) must get the highest win prob,
+    and probabilities must sum to 1 — guards the win/loss triangle orientation."""
+    import numpy as np
+
+    from wc2026.models.poisson import _poisson_grid
+
+    p_h, p_d, p_a, grids = _poisson_grid(
+        np.array([2.5, 0.4]), np.array([0.4, 2.5]), max_goals=10
+    )
+    np.testing.assert_allclose(p_h + p_d + p_a, 1.0, rtol=1e-6)
+    assert p_h[0] > p_a[0]  # strong home favourite
+    assert p_a[1] > p_h[1]  # strong away favourite
+
+
+def test_poisson_fit_predict_smoke() -> None:
+    """End-to-end Bayesian Poisson fit (fast MAP) + predict on the toy matrix."""
+    import numpy as np
+    import pandas as pd
+
+    from wc2026.models.poisson import BayesianPoissonPredictor
+
+    X, y = _toy_matrix()
+    # toy results reused: build aligned goals from the same synthetic frame.
+    goals = pd.DataFrame({"home_score": [2, 0, 1, 3] * 6, "away_score": [0, 1, 1, 0] * 6})
+    model = BayesianPoissonPredictor().fit(X, y, goals=goals, method="map")
+    proba = model.predict_proba(X)
+    assert proba.shape == (len(X), 3)
+    np.testing.assert_allclose(proba.sum(axis=1), 1.0, rtol=1e-6)
+    grids, scores = model.score_grid(X.iloc[:2])
+    assert len(scores) == 2 and all(len(s) == 2 for s in scores)
+
+
 def test_save_load_roundtrip(tmp_path) -> None:
     import datetime as dt
 
