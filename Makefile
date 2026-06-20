@@ -24,8 +24,9 @@ setup: ## Sync the venv to the lock file and install the package (editable).
 data: ## Download/refresh sources and build processed datasets (prompts before network calls).
 	$(WC2026) data
 
-train: ## Train, evaluate, and persist the model; print the scorecard.
-	$(WC2026) train
+train: ## Train, evaluate, and persist both models (baseline + Bayesian).
+	$(WC2026) train --model baseline
+	$(WC2026) train --model bayesian
 
 evaluate: ## Run the temporal backtest and print metrics.
 	$(WC2026) evaluate

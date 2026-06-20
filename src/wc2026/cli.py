@@ -135,6 +135,109 @@ def _cmd_train(args: argparse.Namespace) -> int:
     return 0
 
 
+def _confidence(proba) -> str:
+    """A simple confidence label from the top outcome probability."""
+    top = float(max(proba))
+    if top >= 0.55:
+        return "high"
+    if top >= 0.40:
+        return "medium"
+    return "low"
+
+
+def _predictor_and_context(model_name: str):
+    """Load a model and assemble the feature context + history (shared helper)."""
+    from wc2026.data import loaders
+    from wc2026.features import build
+
+    model = _model_factory(model_name).load()
+    results = loaders.load_results()
+    ctx = build.make_context(results)
+    return model, results, ctx
+
+
+def _predict_rows(model, X) -> tuple:
+    """Return (proba (n,3), scorelines or None) for a feature frame."""
+    proba = model.predict_proba(X)
+    scores = model.score_grid(X)[1] if hasattr(model, "score_grid") else None
+    return proba, scores
+
+
+def _cmd_predict(args: argparse.Namespace) -> int:
+    """Predict a single match: W/D/L, most-likely scoreline, confidence."""
+    import json as _json
+    from datetime import date as _date
+
+    from wc2026.features import build
+    from wc2026.models.base import Match
+
+    model, results, ctx = _predictor_and_context(args.model)
+    md = _date.fromisoformat(args.date) if args.date else _date(2026, 6, 15)
+    match = Match(
+        args.home, args.away, md, neutral=args.neutral,
+        context={"tournament": "FIFA World Cup"},
+    )
+    X = build.build_features(match, results, ctx)
+    proba, scores = _predict_rows(model, X)
+    p = proba[0]
+    scoreline = f"{scores[0][0]}-{scores[0][1]}" if scores else None
+
+    if args.json:
+        print(_json.dumps({
+            "home": args.home, "away": args.away, "date": md.isoformat(),
+            "neutral": args.neutral, "p_home_win": float(p[0]), "p_draw": float(p[1]),
+            "p_away_win": float(p[2]), "most_likely_score": scoreline,
+            "confidence": _confidence(p),
+        }, indent=2))
+        return 0
+
+    venue = "neutral" if args.neutral else f"{args.home} home"
+    print(f"\n{args.home} vs {args.away}  ({md}, {venue})\n")
+    print(f"  {args.home} win : {p[0] * 100:5.1f}%")
+    print(f"  draw          : {p[1] * 100:5.1f}%")
+    print(f"  {args.away} win : {p[2] * 100:5.1f}%")
+    if scoreline:
+        print(f"\n  most-likely scoreline : {scoreline} ({args.home}-{args.away})")
+    print(f"  confidence            : {_confidence(p)}")
+    return 0
+
+
+def _cmd_predict_fixtures(args: argparse.Namespace) -> int:
+    """Predict all 72 group-stage fixtures as a table."""
+    import pandas as pd
+
+    from wc2026.data import loaders
+    from wc2026.features import build
+    from wc2026.tournament.simulate import ASOF
+
+    model, results, ctx = _predictor_and_context(args.model)
+    fixtures = loaders.load_wc2026_fixtures()
+    teams = [t for ts in loaders.load_wc2026_groups().values() for t in ts]
+    hist = build.asof_history(results, teams, ASOF)
+    pairs = [
+        (r.home_team, r.away_team, bool(r.neutral)) for r in fixtures.itertuples(index=False)
+    ]
+    X = build.feature_rows(pairs, ASOF, ctx, hist)
+    proba, scores = _predict_rows(model, X)
+
+    rows = []
+    for k, r in enumerate(fixtures.itertuples(index=False)):
+        rows.append({
+            "group": r.group, "home": r.home_team, "away": r.away_team,
+            "P(H)%": round(float(proba[k][0]) * 100, 1),
+            "P(D)%": round(float(proba[k][1]) * 100, 1),
+            "P(A)%": round(float(proba[k][2]) * 100, 1),
+            "score": f"{scores[k][0]}-{scores[k][1]}" if scores else "",
+        })
+    out = pd.DataFrame(rows)
+    if args.json:
+        print(out.to_json(orient="records"))
+    else:
+        print(f"\n2026 group-stage predictions ({args.model})\n")
+        print(out.to_string(index=False))
+    return 0
+
+
 def _cmd_simulate(args: argparse.Namespace) -> int:
     """Monte Carlo the tournament; print advancement probabilities."""
     from wc2026.tournament.simulate import simulate_tournament
@@ -186,14 +289,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_train = sub.add_parser("train", help="Train, evaluate, and persist the model.")
     p_train.add_argument(
-        "--model", choices=("baseline", "bayesian"), default="baseline", help="Model to train."
+        "--model", choices=("baseline", "bayesian"), default="bayesian", help="Model to train."
     )
     p_train.add_argument("--splits", type=int, default=5, help="Backtest folds.")
     _add_json_flag(p_train)
 
     p_eval = sub.add_parser("evaluate", help="Run the temporal backtest.")
     p_eval.add_argument(
-        "--model", choices=("baseline", "bayesian"), default="baseline", help="Model to evaluate."
+        "--model", choices=("baseline", "bayesian"), default="bayesian", help="Model to evaluate."
     )
     p_eval.add_argument("--splits", type=int, default=5, help="Backtest folds.")
     _add_json_flag(p_eval)
@@ -205,10 +308,16 @@ def build_parser() -> argparse.ArgumentParser:
     p_pred.add_argument(
         "--neutral", action="store_true", help="Played on neutral ground."
     )
+    p_pred.add_argument(
+        "--model", choices=("bayesian", "baseline"), default="bayesian", help="Model to use."
+    )
     _add_json_flag(p_pred)
 
     p_fix = sub.add_parser(
         "predict-fixtures", help="Predict all 2026 group-stage fixtures."
+    )
+    p_fix.add_argument(
+        "--model", choices=("bayesian", "baseline"), default="bayesian", help="Model to use."
     )
     _add_json_flag(p_fix)
 
@@ -232,6 +341,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         "train": _cmd_train,
         "evaluate": _cmd_evaluate,
         "simulate": _cmd_simulate,
+        "predict": _cmd_predict,
+        "predict-fixtures": _cmd_predict_fixtures,
     }
     handler = handlers.get(args.command)
     if handler is not None:

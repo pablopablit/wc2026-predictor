@@ -36,7 +36,55 @@ make simulate ARGS="--n 10000"
 ```
 
 The CLI is also directly available as `wc2026` inside the venv
-(`.venv/bin/wc2026 --help`), and the Python API is `from wc2026 import Predictor`.
+(`.venv/bin/wc2026 --help`). Single matches and the full fixture table:
+
+```bash
+wc2026 predict --home Spain --away Brazil --neutral   # W/D/L + scoreline + confidence
+wc2026 predict-fixtures                                # all 72 group games
+```
+
+### Python API
+
+```python
+from datetime import date
+from wc2026 import Match
+from wc2026.models.poisson import BayesianPoissonPredictor
+from wc2026.data import loaders
+from wc2026.features import build
+
+model = BayesianPoissonPredictor.load()        # trained model + metadata sidecar
+results = loaders.load_results()
+ctx = build.make_context(results)              # leakage-safe Elo + structural lookups
+
+match = Match("Argentina", "France", date(2026, 7, 1), neutral=True)
+p = model.predict_match(match, results, ctx)[0]  # -> [P(home win), P(draw), P(away win)]
+```
+
+## Results (v1)
+
+Walk-forward temporal backtest (5 folds, 49,433 internationals 1872–2026):
+
+| Model | log-loss ↓ | Brier ↓ | accuracy ↑ |
+|---|---|---|---|
+| Baseline (Elo logit) | **0.893** | **0.526** | **58.8%** |
+| Bayesian Poisson | 0.898 | 0.528 | 58.7% |
+
+**Honest finding:** the Bayesian Poisson model essentially **ties the baseline on
+W/D/L** — the extra machinery does not improve outcome prediction (echoing the
+reference project's "added complexity over-fits" conclusions; see
+[`docs/FINDINGS.md`](docs/FINDINGS.md)). The Poisson model earns its place by
+producing **scorelines** and the **score grids the simulator needs**, not by
+accuracy. Probabilities are temperature-calibrated (T ≈ 1.07).
+
+Sample 10,000-simulation title odds (seed-stable, official 2026 draw):
+
+| Team | Win % | Reach final % |
+|---|---|---|
+| 🇪🇸 Spain | 28.2 | 40.3 |
+| 🇦🇷 Argentina | 20.3 | 33.3 |
+| 🇫🇷 France | 10.6 | 19.5 |
+| 🏴 England | 6.3 | 13.4 |
+| 🇧🇷 Brazil | 5.5 | 11.3 |
 
 ## Toolchain
 
